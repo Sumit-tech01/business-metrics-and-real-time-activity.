@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Manrope', 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Avenir Next', sans-serif;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply font-sans text-slate-700 antialiased dark:text-slate-200;
+    background-color: #f1f5f9;
+  }
+
+  html.dark body {
+    background-color: #020617;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/80;
+  }
+
+  .calendar-shell .rbc-calendar {
+    @apply bg-white text-slate-700 dark:bg-slate-900 dark:text-slate-200;
+  }
+
+  .calendar-shell .rbc-toolbar button {
+    @apply rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800;
+  }
+
+  .calendar-shell .rbc-toolbar button.rbc-active {
+    @apply bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950;
+  }
+
+  .calendar-shell .rbc-header {
+    @apply border-slate-200 py-2 text-xs font-semibold dark:border-slate-800;
+  }
+
+  .calendar-shell .rbc-month-view,
+  .calendar-shell .rbc-time-view,
+  .calendar-shell .rbc-agenda-view {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+
+  .calendar-shell .rbc-day-bg + .rbc-day-bg,
+  .calendar-shell .rbc-month-row + .rbc-month-row {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+
+  .calendar-shell .rbc-off-range-bg {
+    @apply bg-slate-100 dark:bg-slate-800/70;
+  }
+
+  .calendar-shell .rbc-today {
+    @apply bg-teal-50 dark:bg-teal-900/20;
+  }
+
+  .calendar-shell .rbc-event {
+    @apply rounded-md border-none bg-teal-600 px-1 py-0.5 text-[11px] font-medium text-white dark:bg-teal-500 dark:text-slate-950;
+  }
+}

@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasUserProfile() {
+      return isSignedIn() && userDoc().data.companyId is string;
+    }
+
+    function companyDoc(companyId) {
+      return get(/databases/$(database)/documents/companies/$(companyId));
+    }
+
+    function companyExists(companyId) {
+      return exists(/databases/$(database)/documents/companies/$(companyId));
+    }
+
+    function ownsCompany(companyId) {
+      return isSignedIn()
+        && companyExists(companyId)
+        && companyDoc(companyId).data.ownerId == request.auth.uid;
+    }
+
+    function userCompanyId() {
+      return userDoc().data.companyId;
+    }
+
+    function isAdmin() {
+      return userDoc().data.role == 'admin';
+    }
+
+    function sameCompany(companyId) {
+      return hasUserProfile() && companyId == userCompanyId();
+    }
+
+    function canReadCompanyDoc() {
+      return sameCompany(resource.data.companyId);
+    }
+
+    function canCreateCompanyDoc() {
+      return hasUserProfile()
+        && request.resource.data.companyId == userCompanyId()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    function canUpdateCompanyDoc() {
+      return canReadCompanyDoc()
+        && request.resource.data.companyId == resource.data.companyId
+        && request.resource.data.userId == resource.data.userId;
+    }
+
+    match /users/{userId} {
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.email is string
+        && request.resource.data.companyId is string
+        && request.resource.data.role in ['admin', 'staff']
+        && ownsCompany(request.resource.data.companyId);
+
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId
+        || sameCompany(resource.data.companyId)
+      );
+
+      allow update: if isSignedIn()
+        && request.resource.data.uid == resource.data.uid
+        && sameCompany(resource.data.companyId)
+        && request.resource.data.companyId == resource.data.companyId
+        && request.resource.data.role in ['admin', 'staff']
+        && (
+          request.auth.uid == userId
+          || isAdmin()
+        );
+
+      allow delete: if isSignedIn()
+        && isAdmin()
+        && sameCompany(resource.data.companyId)
+        && request.auth.uid != userId;
+    }
+
+    match /companies/{companyId} {
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      allow read: if sameCompany(companyId);
+      allow update, delete: if sameCompany(companyId) && isAdmin();
+    }
+
+    match /transactions/{docId} {
+      allow create: if canCreateCompanyDoc();
+      allow read, delete: if canReadCompanyDoc();
+      allow update: if canUpdateCompanyDoc();
+    }
+
+    match /customers/{docId} {
+      allow create: if canCreateCompanyDoc();
+      allow read, delete: if canReadCompanyDoc();
+      allow update: if canUpdateCompanyDoc();
+    }
+
+    match /inventory/{docId} {
+      allow create: if canCreateCompanyDoc();
+      allow read, delete: if canReadCompanyDoc();
+      allow update: if canUpdateCompanyDoc();
+    }
+
+    match /appointments/{docId} {
+      allow create: if canCreateCompanyDoc();
+      allow read, delete: if canReadCompanyDoc();
+      allow update: if canUpdateCompanyDoc();
+    }
+
+    match /activityLogs/{docId} {
+      allow create: if canCreateCompanyDoc();
+      allow read: if canReadCompanyDoc();
+      allow update, delete: if false;
+    }
+  }
+}
